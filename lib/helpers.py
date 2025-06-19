@@ -1,79 +1,148 @@
 # lib/helpers.py
-from models.comic import Comic
-from models.character import Character
+
+# list updated lists after creations, edits, and deletions
+
+from models.category import Category
+from models.collectible import Collectible
+
+def spacer(lines=1):
+    print("\n" * lines)
 
 def exit_program():
     print("Goodbye!")
     exit()
 
-# ============== COMIC FUNCTIONS ================
-
-def create_comic():
-    title = input("Enter the comic's title: ")
-    main_character = input("Enter the main character: ")
-    issue_number = input("Enter the issue number: ")
-    universe = input("Enter the universe name: ")
-    price = input("Enter the comic's price: ")
+def choose_from_indexed_list(items, label_attr="name", prompt="Choose by number: "):
+    for i, item in enumerate(items, 1):
+        print(f"{i}. {getattr(item, label_attr)}")
     try:
-        comic = Comic.create(title, main_character, int(issue_number), universe, float(price))
-        print(f'Success, {comic} added ')
+        choice = int(input(prompt))
+        return items[choice - 1]
+    except (ValueError, IndexError):
+        print("Invalid choice.")
+        return None
+
+# ============== CATEGORY FUNCTIONS ================
+def list_categories():
+    categories = Category.get_all()
+    if not categories:
+        print("No categories found.")
+        return []
+    for i, category in enumerate(categories, 1):
+        print(f"{i}. {category.name}")
+    return categories
+
+def create_category():
+    name = input("Enter the category name: ")
+    try:
+        category = Category.create(name)
+        print(f'Success, {category.name} added ')
     except Exception as exc:
-        print("Error creating comic: ", exc)
+        print("Error creating category: ", exc)
 
-def list_comics():
-    comics = Comic.get_all()
-    for comic in comics:
-        print(comic)
+def choose_category():
+    categories = Category.get_all()
+    if not categories:
+        print("No categories available.")
+        return None
+    return choose_from_indexed_list(categories, label_attr="name", prompt="Select a category by number: ")
 
-def find_comic_by_id():
-    id_ = input("Enter the comic's id: ")
-    comic = Comic.find_by_id(id_)
-    print(comic) if comic else print(f'Comic {id_} not found 🔍')
+def list_collectibles():
+    categories = Category.get_all()
+    category = choose_from_indexed_list(categories, label_attr="name", prompt="Choose a category by number: ")
+    if not category:
+        print("Category not found.")
+        return None
 
-def delete_comic():
-    id_ = int(input("Enter the comic's id: "))
-    if comic := Comic.find_by_id(id_):
-        comic.delete()
-        print(f'Comic {id_} deleted 🗑️')
+    collectibles = category.get_collectibles()
+    if not collectibles:
+        print("No collectibles found in this category.")
     else:
-        print(f'Comic {id_} not found 🔍')
+        print(f"\nCollectibles in {category.name}:")
+        for i, collectible in enumerate(collectibles, 1):
+            print(f"{i}. {collectible.name}")
+
+    return category
+        
+def delete_category():
+    categories = Category.get_all()
+    category = choose_from_indexed_list(categories, label_attr="name", prompt="Select a category by number: ")
+    if category:
+        category.delete()
+        print(f'Category "{category.name}" deleted ')
+    else:
+        print(f'Category not found ')
+
+# ============ COLLECTIBLE FUNCTIONS ==============
+
+def create_collectible(category):
+    name = input("Enter the collectible name: ")
+    universe = input("Enter collectible's universe or property: ")
+    est_value_str = input("Enter collectible's estimated value: $")
+    
+    try:
+        est_value = float(est_value_str)
+        collectible = Collectible.create(name, universe, est_value, category.id)
+        print(f" Success! {collectible.name} was added to {category.name}.")
+        
+        print(collectible.name)
+
+    except Exception as exc:
+        print(" Error creating collectible: ", exc)
+
+def delete_collectible(category):
+    collectibles = category.get_collectibles()
+    if not collectibles:
+        print("No collectibles to delete in this category.")
+        return
+    
+    collectible = choose_from_indexed_list(collectibles, label_attr="name", prompt="Choose a collectible to delete: ")
+
+    if collectible:
+        confirm = input(f"Are you sure you want to delete '{collectible.name}'? (y/n): ").lower()
+        if confirm == "y":
+            collectible.delete()
+            print(f"{collectible.name} successfully deleted")
+        else:
+            print("Deletion canceled")
+    else:
+        print("Collectible not found")
+    
+  
+def show_collectible_details(category):
+        collectibles = category.get_collectibles()
+
+        if not collectibles:
+            print(f"No collectibles in {category}")
+            return
+        
+        collectible = choose_from_indexed_list(collectibles, label_attr="name", prompt="Choose a collectible to view: ")
+        print("")
+        if collectible:
+           details = collectible.display_details()
+           for key, value in details.items():
+               print(f"{key}: {value}")
         
 
-# ============ CHARACTER FUNCTIONS ==============
+def edit_collectible(category):
+    collectibles = category.get_collectibles()
+    collectible = choose_from_indexed_list(collectibles, label_attr="name", prompt="Choose a collectible to edit: ")
 
-def create_character():
-    name = input("Enter the character's name: ")
-    secret_identity = input("Enter the character's secret identity: ")
-    universe = input("Enter the character's universe: ")
+    if not collectible:
+        return
+    print(f"Editing '{collectible.name}' — press Enter to keep the current value.")
+
+    new_name = input(f"[{collectible.name}] New name: ") or collectible.name
+    new_universe = input(f"[{collectible.universe}] New universe or property: ") or collectible.universe
+    new_value_input = input(f"[{collectible.est_value}] New estimated value: $") or collectible.est_value
+    new_est_value = float(new_value_input) if new_value_input else collectible.est_value
+
     try:
-        character = Character.create(name, secret_identity, universe)
-        print(f'Success, {character} added')
-    except Exception as exc:
-        print("Error creating character: ", exc)
-
-def delete_character():
-    id_ = input("Enter the character's id: ")
-    if character := Character.find_by_id(id_):
-        character.delete()
-        print(f'Character {id_} deleted')
-    else:
-        print(f'Character {id_} not found')
+        collectible.name = new_name
+        collectible.universe = new_universe
+        collectible.est_value = new_est_value
+        collectible.update()
+        print(f"{collectible.name} updated!")
     
-def find_character_by_id():
-    id_ = input("Enter the character's id: ")
-    if character := Character.find_by_id(id_):
-       print(character) if character else print("Character id not found")
-
-def list_characters():
-    comics = Character.get_all()
-    for comic in comics:
-        print(comic)
-
-def get_comics_by_secret_identity():
-    secret_identity = input("Enter the character's secret identity: ")
-    comics = Character.get_comics_by_secret_identity(secret_identity)
-    if comics:
-        for comic in comics:
-            print(comic)
-    else:
-        print(f"No comics found for secret identity: {secret_identity}")
+    except Exception as exc:
+        print("Error editing collectible: ", exc)
