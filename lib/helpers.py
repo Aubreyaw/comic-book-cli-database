@@ -1,16 +1,16 @@
 # lib/helpers.py
 
-# list updated lists after creations, edits, and deletions
-
 from models.category import Category
 from models.collectible import Collectible
 
 def spacer(lines=1):
     print("\n" * lines)
 
+
 def exit_program():
     print("Goodbye!")
     exit()
+
 
 def choose_from_indexed_list(items, label_attr="name", prompt="Choose by number: "):
     for i, item in enumerate(items, 1):
@@ -22,7 +22,7 @@ def choose_from_indexed_list(items, label_attr="name", prompt="Choose by number:
         print("Invalid choice.")
         return None
 
-# ============== CATEGORY FUNCTIONS ================
+
 def list_categories():
     categories = Category.get_all()
     if not categories:
@@ -32,6 +32,7 @@ def list_categories():
         print(f"{i}. {category.name}")
     return categories
 
+
 def create_category():
     name = input("Enter the category name: ")
     try:
@@ -40,6 +41,7 @@ def create_category():
     except Exception as exc:
         print("Error creating category: ", exc)
 
+
 def choose_category():
     categories = Category.get_all()
     if not categories:
@@ -47,7 +49,18 @@ def choose_category():
         return None
     return choose_from_indexed_list(categories, label_attr="name", prompt="Select a category by number: ")
 
-def list_collectibles():
+
+def list_collectibles(category):
+    collectibles = Collectible.get_all()
+    if not collectibles:
+        print("No collectibles found")
+        return []
+    for i, collectible in enumerate(collectibles, 1):
+        print(f"{i}. {collectible.name}")
+    return collectibles
+
+
+def choose_category_and_show_collectibles():
     categories = Category.get_all()
     category = choose_from_indexed_list(categories, label_attr="name", prompt="Choose a category by number: ")
     if not category:
@@ -56,7 +69,7 @@ def list_collectibles():
 
     collectibles = category.get_collectibles()
     if not collectibles:
-        print("No collectibles found in this category.")
+        print(f"No collectibles found in {category.name}.")
     else:
         print(f"\nCollectibles in {category.name}:")
         for i, collectible in enumerate(collectibles, 1):
@@ -64,6 +77,7 @@ def list_collectibles():
 
     return category
         
+
 def delete_category():
     categories = Category.get_all()
     category = choose_from_indexed_list(categories, label_attr="name", prompt="Select a category by number: ")
@@ -73,7 +87,6 @@ def delete_category():
     else:
         print(f'Category not found ')
 
-# ============ COLLECTIBLE FUNCTIONS ==============
 
 def create_collectible(category):
     name = input("Enter the collectible name: ")
@@ -84,11 +97,10 @@ def create_collectible(category):
         est_value = float(est_value_str)
         collectible = Collectible.create(name, universe, est_value, category.id)
         print(f" Success! {collectible.name} was added to {category.name}.")
-        
-        print(collectible.name)
 
     except Exception as exc:
         print(" Error creating collectible: ", exc)
+
 
 def delete_collectible(category):
     collectibles = category.get_collectibles()
@@ -113,7 +125,7 @@ def show_collectible_details(category):
         collectibles = category.get_collectibles()
 
         if not collectibles:
-            print(f"No collectibles in {category}")
+            print(f"No collectibles in {category.name}")
             return
         
         collectible = choose_from_indexed_list(collectibles, label_attr="name", prompt="Choose a collectible to view: ")

@@ -1,18 +1,17 @@
 # lib/cli.py 
 
-# list updated lists after creations, edits, and deletions
-
 from helpers import (
     spacer,
     exit_program,
     create_category,
     list_categories,
     delete_category,
-    list_collectibles,
+    choose_category_and_show_collectibles,
     create_collectible,
     delete_collectible,
     show_collectible_details,
-    edit_collectible
+    edit_collectible,
+    list_collectibles
 )
 
 def main_menu():
@@ -38,7 +37,7 @@ def category_menu():
         if choice == "x":
             exit_program()
         elif choice == "1": 
-           category = list_collectibles() 
+           category = choose_category_and_show_collectibles() 
            if category:
             collectible_menu(category)
             spacer(0)
@@ -63,6 +62,7 @@ def collectible_menu(category):
             exit_program()
         elif choice == "1":
             create_collectible(category)
+            list_collectibles(category)
             spacer(0)
         elif choice == "2":
             delete_collectible(category) 
@@ -109,4 +109,3 @@ def collectible_menu_actions():
 
 if __name__ == "__main__":
     main_menu()
-    # 🚧
